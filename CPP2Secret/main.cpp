@@ -87,22 +87,22 @@ int main(int argc, char* argv[])
 		{
 			
 			// allocate memory:
-			unsigned char* buffer = new unsigned char[wav.data_size];
+			char* buffer = new char[wav.data_size];
 			std::vector<std::string> full_mess;
 			std::string mess;
 			
 			uint16_t mask = 0b0000'0000'0000'0001;
 			// read data as a block:
-			input.read(reinterpret_cast<char*>(buffer), wav.data_size);
+			input.read(buffer, wav.data_size);
 			input.close();
 			const auto length = wav.data_size / wav.bits_per_sample;
 			std::size_t b_counter = 0;
 			std::bitset<8> bi;
 			for(unsigned int i = 0; i < length; i += 2)
 			{
-				uint16_t sample = (buffer[i + 1] << 8) | buffer[i];
+				int16_t sample = (static_cast<char>(buffer[i + 1]) << 8) | static_cast<char>(buffer[i]);
 				//printf(PRINTF_BINARY_PATTERN_INT16 "\n", PRINTF_BYTE_TO_BINARY_INT16(sample));
-				bi.set(b_counter, buffer[i + 1] & 1);
+				bi.set(b_counter, sample & 1);
 				//std::cout << (buffer[i] & 1) << std::endl;
 				//for(auto j = 0; j < wav.bits_per_sample; ++j)
 				//{
@@ -117,7 +117,7 @@ int main(int argc, char* argv[])
 				//message.emplace_back(b[0]);
 				++b_counter;
 				//printf("point " PRINTF_BINARY_PATTERN_INT16 "\n", PRINTF_BYTE_TO_BINARY_INT16(buffer[i]));
-				if(buffer[i] == 0b0000'0000'0000'0000)
+				if(sample == 0b0000'0000'0000'0000)
 				{
 					
 					full_mess.push_back(mess);
@@ -130,28 +130,9 @@ int main(int argc, char* argv[])
 				}
 				if(b_counter == 8)
 				{
-					//std::string str_message((b.size() + 8 - 1) / 8, 0 );
-					//auto it = str_message.begin();
-					//int shift = 0;
-					////b.flip();
-					//for(auto bit: b)
-					//{
-					//	*it |= bit << shift;
-					//	if(++shift == 8)
-					//	{
-					//		++it;
-					//		shift = 0;
-					//	}
-					//}
-					//std::cout << str_message;
-					//full_mess.push_back(str_message);
-					auto str = bi.to_string();
-					unsigned char res = 0;
-					for (int j = 0; j < 8; ++j)
-					{
-						res |= (str[j] == '1') << (7 - j);
-					}
-					mess.push_back(res);
+					std::cout << bi.to_string() << std::endl;
+					bi.reset();
+					mess.push_back(static_cast<char>(bi.to_ulong()));
 					b_counter = 0;
 				}
 			}
