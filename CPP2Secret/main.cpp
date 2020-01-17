@@ -24,11 +24,11 @@
 
 struct WAV_HEADER
 {
-	char riff[4]; //RIFF Header
+	unsigned char riff[4]; //RIFF Header
 	uint32_t file_size; // RIFF Chunk Size
-	char wave[4]; // WAVE Header
+	unsigned char wave[4]; // WAVE Header
 	/* "fmt" sub-chunk */
-	char fmt[4]; // FMT header
+	unsigned char fmt[4]; // FMT header
 	uint32_t fmt_size; // Size of the fmt chunk
 	uint16_t audio_format; // Audio format 1=PCM,6=mulaw,7=alaw, 257=IBM Mu-Law, 258=IBM A-Law, 259=ADPCM
 	uint16_t num_of_chan; // Number of channels 1=Mono 2=Sterio
@@ -37,7 +37,7 @@ struct WAV_HEADER
 	uint16_t block_align; // 2=16-bit mono, 4=16-bit stereo
 	uint16_t bits_per_sample; // Number of bits per sample
 	/* "data" sub-chunk */
-	char data_id[4]; // "data"  string
+	unsigned char data_id[4]; // "data"  string
 	uint32_t data_size; // Sampled data length
 };
 
@@ -56,13 +56,13 @@ int main(int argc, char* argv[])
 	std::ifstream input(file, std::ios::binary);
 	if (input) {
 		WAV_HEADER wav{};
-		input.read(wav.riff, 4);
+		input.read(reinterpret_cast<char*>(wav.riff), 4);
 		std::cout << "Riff: " << wav.riff[0] << wav.riff[1] << wav.riff[2] << wav.riff[3] << std::endl;
 		input.read(reinterpret_cast<char*>(&wav.file_size), 4);
 		std::cout << "File Size: " <<  wav.file_size << std::endl;
-		input.read(wav.wave, 4);
+		input.read(reinterpret_cast<char*>(wav.wave), 4);
 		std::cout << "Wave: " << wav.wave[0] << wav.wave[1] << wav.wave[2] << wav.wave[3] << std::endl;
-		input.read(wav.fmt, 4);
+		input.read(reinterpret_cast<char*>(wav.fmt), 4);
 		std::cout << "Fmt: " << wav.fmt[0] << wav.fmt[1] << wav.fmt[2] << wav.fmt[3] << std::endl;
 		input.read(reinterpret_cast<char*>(&wav.fmt_size), 4);
 		std::cout << "Fmt size: " << wav.fmt_size << std::endl;
@@ -79,18 +79,17 @@ int main(int argc, char* argv[])
 		input.read(reinterpret_cast<char*>(&wav.bits_per_sample), 2);
 		std::cout << "Bits per sample: " << wav.bits_per_sample << std::endl;
 
-		input.read(wav.data_id, 4);
+		input.read(reinterpret_cast<char*>(wav.data_id), 4);
 		std::cout << "Data: " << wav.data_id[0] << wav.data_id[1] << wav.data_id[2] << wav.data_id[3] << std::endl;
 		input.read(reinterpret_cast<char*>(&wav.data_size), 4);
 		std::cout << "Data size: " << wav.data_size << std::endl;
-		if(strncmp(wav.data_id, "data", 4) == 0 && wav.bits_per_sample >= 16)
+		if(strncmp(reinterpret_cast<char*>(wav.data_id), "data", 4) == 0 && wav.bits_per_sample >= 16)
 		{
 			
 			// allocate memory:
-			char* buffer = new char[wav.data_size];
-			std::vector<std::bitset<8>> fullMessage;
-			std::vector<bool> message;
-			
+			unsigned char* buffer = new unsigned char[wav.data_size];
+			std::vector<std::string> full_mess;
+			std::string mess;
 			
 			uint16_t mask = 0b0000'0000'0000'0001;
 			// read data as a block:
@@ -98,23 +97,32 @@ int main(int argc, char* argv[])
 			input.close();
 			const auto length = wav.data_size / wav.bits_per_sample;
 			std::size_t b_counter = 0;
-			for(unsigned i = 0; i < length; i += wav.bits_per_sample)
+			std::bitset<8> bi;
+			for(unsigned int i = 0; i < length; i += 2)
 			{
-				std::string str_message;
-				std::vector<bool> b;
-				b.reserve(wav.bits_per_sample);
-				for(auto j = 0; j < wav.bits_per_sample; ++j)
-				{
-					b.emplace_back(((buffer[i]) & (1U << j)) >> j);
-					//std::cout << b[j];
-				}
+				uint16_t sample = (buffer[i + 1] << 8) | buffer[i];
+				//printf(PRINTF_BINARY_PATTERN_INT16 "\n", PRINTF_BYTE_TO_BINARY_INT16(sample));
+				bi.set(b_counter, buffer[i + 1] & 1);
+				//std::cout << (buffer[i] & 1) << std::endl;
+				//for(auto j = 0; j < wav.bits_per_sample; ++j)
+				//{
+				//	//b.emplace_back(((buffer[i]) & (1U << j)) >> j);
+				//	
+				//	//std::cout << b[j];
+				//}
+				//b.flip();
 				//std::cout << std::endl;
-				//std::cout << " " << b[wav.bits_per_sample - 1] << std::endl;
-				message.emplace_back(b[wav.bits_per_sample - 1]);
+				//std::cout << " " << b[0] << std::endl;
+				//std::cout << bi << std::endl;
+				//message.emplace_back(b[0]);
 				++b_counter;
 				//printf("point " PRINTF_BINARY_PATTERN_INT16 "\n", PRINTF_BYTE_TO_BINARY_INT16(buffer[i]));
 				if(buffer[i] == 0b0000'0000'0000'0000)
 				{
+					
+					full_mess.push_back(mess);
+					mess = {};
+					//b_counter = 0;
 					//std::cout << "Found nul byte at position: " << i << std::endl;
 					//std::cout << "Message: " << result.back() << std::endl;
 					
@@ -122,32 +130,41 @@ int main(int argc, char* argv[])
 				}
 				if(b_counter == 8)
 				{
-					str_message.resize(8);
-					auto it = str_message.begin();
-					int shift = 0;
-					//b.flip();
-					for(auto bit: b)
+					//std::string str_message((b.size() + 8 - 1) / 8, 0 );
+					//auto it = str_message.begin();
+					//int shift = 0;
+					////b.flip();
+					//for(auto bit: b)
+					//{
+					//	*it |= bit << shift;
+					//	if(++shift == 8)
+					//	{
+					//		++it;
+					//		shift = 0;
+					//	}
+					//}
+					//std::cout << str_message;
+					//full_mess.push_back(str_message);
+					auto str = bi.to_string();
+					unsigned char res = 0;
+					for (int j = 0; j < 8; ++j)
 					{
-						*it |= bit << shift;
-						if(++shift == 8)
-						{
-							++it;
-							shift = 0;
-						}
+						res |= (str[j] == '1') << (7 - j);
 					}
-					std::cout << str_message;
+					mess.push_back(res);
 					b_counter = 0;
 				}
-				
-				//printf("%d\n", bitmessage);
-				//printf("%d\n", mask);
 			}
-
+			for(auto& str: full_mess)
+			{
+				std::cout << str << " ";
+			}
+			std::cout << full_mess.size();
 			//std::cout.write(buffer, wav.data_size);
 			delete[] buffer;
 		} else
 		{
-			input.seekg(0, wav.data_size);
+			std::cout << "Not a valid file." << std::endl;
 		}
 		
 		
