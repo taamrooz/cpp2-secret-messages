@@ -3,16 +3,17 @@
 #include <fstream>
 #include <iostream>
 #include <bitset>
+#include <vector>
 
 void filestream::read_file(const std::string& path, bool verbose)
 {
 	std::ifstream input(path, std::ios::binary);
 	if (input) {
-		WAV_HEADER wav{};
-		input.read(reinterpret_cast<char*>(wav.riff), 4);
+		wav_header wav{};
+		input.read(wav.riff.data(), 4);
 		input.read(reinterpret_cast<char*>(&wav.file_size), 4);
-		input.read(reinterpret_cast<char*>(wav.wave), 4);
-		input.read(reinterpret_cast<char*>(wav.fmt), 4);
+		input.read(wav.wave.data(), 4);
+		input.read(wav.fmt.data(), 4);
 		input.read(reinterpret_cast<char*>(&wav.fmt_size), 4);
 		input.read(reinterpret_cast<char*>(&wav.audio_format), 2);
 		input.read(reinterpret_cast<char*>(&wav.num_of_chan), 2);
@@ -20,7 +21,7 @@ void filestream::read_file(const std::string& path, bool verbose)
 		input.read(reinterpret_cast<char*>(&wav.bytes_per_sec), 4);
 		input.read(reinterpret_cast<char*>(&wav.block_align), 2);
 		input.read(reinterpret_cast<char*>(&wav.bits_per_sample), 2);
-		input.read(reinterpret_cast<char*>(wav.data_id), 4);
+		input.read(wav.data_id.data(), 4);
 		input.read(reinterpret_cast<char*>(&wav.data_size), 4);
 
 		if (verbose)
@@ -39,44 +40,38 @@ void filestream::read_file(const std::string& path, bool verbose)
 			std::cout << "Data: " << wav.data_id[0] << wav.data_id[1] << wav.data_id[2] << wav.data_id[3] << std::endl;
 			std::cout << "Data size: " << wav.data_size << std::endl;
 		}
-		if (strncmp(reinterpret_cast<char*>(wav.data_id), "data", 4) == 0 && wav.bits_per_sample >= 16)
+		if (strncmp(wav.data_id.data(), "data", 4) == 0 && wav.bits_per_sample >= 16)
 		{
-
-			// allocate memory:
-			char* buffer = new char[wav.data_size];
+			std::vector<char> buffer(wav.data_size);
 			std::string full_mess;
 			// read data as a block:
-			input.read(buffer, wav.data_size);
+			input.read(buffer.data(), wav.data_size);
 			input.close();
 			const auto length = wav.data_size / wav.bits_per_sample;
-			std::size_t b_counter = 0;
+			int8_t b_counter = 7;
 			std::bitset<8> bi;
 			for (unsigned int i = 0; i < length; i += 2)
 			{
 				int16_t sample = (buffer[i + 1]) << 8 | buffer[i];
 				//Set index of bitset to LSB of the sample.
 				bi.set(b_counter, sample & 1);
-				++b_counter;
+				--b_counter;
 
-				if (b_counter == 8)
+				if (b_counter == -1)
 				{
 					if (bi.none())
 					{
 						break;
 					}
-					//Reverse the bitset to get the correct characters
-					auto str = bi.to_string();
-					std::reverse(str.begin(), str.end());
-					std::bitset<8> temp(str);
-					full_mess += static_cast<char>(temp.to_ulong());
+					//Cast bitset to char and append to message
+					full_mess += static_cast<char>(bi.to_ulong());
 					bi.reset();
 
-					b_counter = 0;
+					b_counter = 7;
 
 				}
 			}
 			std::cout << full_mess;
-			delete[] buffer;
 		}
 		else
 		{
