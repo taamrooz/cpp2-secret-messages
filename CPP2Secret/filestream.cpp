@@ -22,7 +22,7 @@ void filestream::read_file(const std::string& path, bool verbose)
 		input.read(reinterpret_cast<char*>(&wav.bits_per_sample), 2);
 		input.read(reinterpret_cast<char*>(wav.data_id), 4);
 		input.read(reinterpret_cast<char*>(&wav.data_size), 4);
-		
+
 		if (verbose)
 		{
 			std::cout << "Riff: " << wav.riff[0] << wav.riff[1] << wav.riff[2] << wav.riff[3] << std::endl;
@@ -85,8 +85,101 @@ void filestream::read_file(const std::string& path, bool verbose)
 	}
 }
 
+std::string read_original_file(const std::string& path)
+{
+	std::string bits;
+	std::ifstream file(path, std::ios::binary);
+
+	char* c = new char[2]{ '\0' };
+
+	while (file.read(c, 1)) { // read byte by byte
+		bits += std::bitset<8>(c[0]).to_string();
+	}
+
+	delete[] c;
+
+	file.close();
+	return bits;
+}
+
 void filestream::write_message(const std::string& path, const std::string& message)
 {
-	
+	std::string original_file = read_original_file(path);
+	std::string binary_message;
+	unsigned int binary_counter = 0;
+	for (auto c : message)
+	{
+		binary_message += std::bitset<8>(c).to_string();
+	}
+	std::ofstream output(path + 'e', std::ios::out | std::ios::binary);
+
+	/*for (unsigned int i = 0; i < original_file.length(); i += 8)
+	{
+		char* chars = new char[9]{ '\0' };
+		for (int j = 0; j < 8; j++)
+		{
+			chars[j] = original_file[i + j];
+		}
+		std::string s = chars;
+
+		std::bitset<8> b(s);
+
+		auto c = static_cast<char>(b.to_ulong());
+		output.write(&c, 1);
+
+		delete[] chars;
+	}*/
+
+	for (int i = 0; i < 704; i += 8)
+	{
+		char* chars = new char[9]{ '\n' };
+
+		for (int j = 0; j < 8; j++)
+		{
+			chars[j] = original_file[i + j];
+		}
+		std::string s = chars;
+		std::bitset<8> b(s);
+		auto c = static_cast<char>(b.to_ulong());
+		output.write(&c, 1);
+
+		delete[] chars;
+	}
+	const auto k_sample_size = 16;
+	for (unsigned int i = 704; i < original_file.length(); i += 16)
+	{
+		char* chars = new char[k_sample_size + 1]{ '\n' };		
+		
+		for (int j = 0; j < k_sample_size; j++)
+		{
+			chars[j] = original_file[i + j];
+		}
+
+		if (binary_counter < binary_message.length()) {
+			chars[0] = binary_message[binary_counter];
+		}
+		
+		std::string s;
+		for (auto k = 0; k < 8; k++) {
+			s += chars[k];
+		}
+		
+		std::bitset<8> b(s);
+		auto c = static_cast<char>(b.to_ulong());
+		output.write(&c, 1);
+
+		s = "";		
+		for (auto k = 8; k < 16; k++) {
+			s += chars[k];
+		}
+
+		std::bitset<8> b2(s);
+		c = static_cast<char>(b2.to_ulong());
+		output.write(&c, 1);
+		
+		binary_counter++;
+		delete[] chars;
+	}
+	output.close();
 }
 

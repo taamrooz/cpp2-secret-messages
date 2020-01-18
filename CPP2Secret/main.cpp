@@ -48,4 +48,5 @@ int main(int argc, char* argv[])
 		filestream::write_message(file, message);
 	}
 	
+	_CrtDumpMemoryLeaks();
 }
