@@ -49,29 +49,26 @@ void filestream::read_file(const std::string& path, bool verbose)
 			input.read(buffer, wav.data_size);
 			input.close();
 			const auto length = wav.data_size / wav.bits_per_sample;
-			std::size_t b_counter = 0;
+			int8_t b_counter = 7;
 			std::bitset<8> bi;
 			for (unsigned int i = 0; i < length; i += 2)
 			{
 				int16_t sample = (buffer[i + 1]) << 8 | buffer[i];
 				//Set index of bitset to LSB of the sample.
 				bi.set(b_counter, sample & 1);
-				++b_counter;
+				--b_counter;
 
-				if (b_counter == 8)
+				if (b_counter == -1)
 				{
 					if (bi.none())
 					{
 						break;
 					}
-					//Reverse the bitset to get the correct characters
-					auto str = bi.to_string();
-					std::reverse(str.begin(), str.end());
-					std::bitset<8> temp(str);
-					full_mess += static_cast<char>(temp.to_ulong());
+					//Cast bitset to char and append to message
+					full_mess += static_cast<char>(bi.to_ulong());
 					bi.reset();
 
-					b_counter = 0;
+					b_counter = 7;
 
 				}
 			}
