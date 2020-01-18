@@ -10,19 +10,7 @@ void filestream::read_file(const std::string& path, bool verbose)
 	std::ifstream input(path, std::ios::binary);
 	if (input) {
 		wav_header wav{};
-		input.read(wav.riff.data(), 4);
-		input.read(reinterpret_cast<char*>(&wav.file_size), 4);
-		input.read(wav.wave.data(), 4);
-		input.read(wav.fmt.data(), 4);
-		input.read(reinterpret_cast<char*>(&wav.fmt_size), 4);
-		input.read(reinterpret_cast<char*>(&wav.audio_format), 2);
-		input.read(reinterpret_cast<char*>(&wav.num_of_chan), 2);
-		input.read(reinterpret_cast<char*>(&wav.samples_per_sec), 4);
-		input.read(reinterpret_cast<char*>(&wav.bytes_per_sec), 4);
-		input.read(reinterpret_cast<char*>(&wav.block_align), 2);
-		input.read(reinterpret_cast<char*>(&wav.bits_per_sample), 2);
-		input.read(wav.data_id.data(), 4);
-		input.read(reinterpret_cast<char*>(&wav.data_size), 4);
+		wav.read(input);
 
 		if (verbose)
 		{
@@ -86,19 +74,7 @@ void filestream::write_message(const std::string& path, const std::string& messa
 	wav_header wav{};
 	if (input)
 	{
-		input.read(wav.riff.data(), 4);
-		input.read(reinterpret_cast<char*>(&wav.file_size), 4);
-		input.read(wav.wave.data(), 4);
-		input.read(wav.fmt.data(), 4);
-		input.read(reinterpret_cast<char*>(&wav.fmt_size), 4);
-		input.read(reinterpret_cast<char*>(&wav.audio_format), 2);
-		input.read(reinterpret_cast<char*>(&wav.num_of_chan), 2);
-		input.read(reinterpret_cast<char*>(&wav.samples_per_sec), 4);
-		input.read(reinterpret_cast<char*>(&wav.bytes_per_sec), 4);
-		input.read(reinterpret_cast<char*>(&wav.block_align), 2);
-		input.read(reinterpret_cast<char*>(&wav.bits_per_sample), 2);
-		input.read(wav.data_id.data(), 4);
-		input.read(reinterpret_cast<char*>(&wav.data_size), 4);
+		wav.read(input);
 	}
 	int loc = input.tellg();
 
