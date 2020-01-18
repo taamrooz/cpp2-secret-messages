@@ -101,7 +101,6 @@ void filestream::write_message(const std::string& path, const std::string& messa
 		input.read(reinterpret_cast<char*>(&wav.data_size), 4);
 	}
 	int loc = input.tellg();
-	std::cout << loc << std::endl;
 
 	std::string binary_message;
 	for (auto c : message)
@@ -113,6 +112,7 @@ void filestream::write_message(const std::string& path, const std::string& messa
 	std::ofstream output(path, std::ios::in | std::ios::out | std::ios::binary);
 	output.seekp(loc);
 	const auto k_sample_size = wav.bits_per_sample;
+	unsigned int written_bits = 0;
 	for (unsigned int i = 0; i < binary_message.length(); ++i)
 	{
 		output.seekp(loc + i * (k_sample_size / 8), output.beg);
@@ -125,7 +125,9 @@ void filestream::write_message(const std::string& path, const std::string& messa
 		);
 		c = static_cast<char>(b.to_ulong());
 		output.put(c);
-	}	
+		written_bits++;
+	}
+	std::cout << written_bits / 8 << std::endl;
 	output.close();
 	input.close();
 }
