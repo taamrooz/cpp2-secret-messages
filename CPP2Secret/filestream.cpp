@@ -83,7 +83,7 @@ void filestream::read_file(const std::string& path, bool verbose)
 std::string read_original_file(const std::string& path)
 {
 	std::string bits;
-	std::ifstream file(path, std::ios::binary);
+	std::ifstream file(path, std::ios::in | std::ios::binary);
 
 	char* c = new char[2]{ '\0' };
 
@@ -99,82 +99,53 @@ std::string read_original_file(const std::string& path)
 
 void filestream::write_message(const std::string& path, const std::string& message)
 {
-	std::string original_file = read_original_file(path);
+	std::ifstream input(path, std::ios::in | std::ios::binary);
+	wav_header wav{};
+	if (input)
+	{
+		input.read(wav.riff.data(), 4);
+		input.read(reinterpret_cast<char*>(&wav.file_size), 4);
+		input.read(wav.wave.data(), 4);
+		input.read(wav.fmt.data(), 4);
+		input.read(reinterpret_cast<char*>(&wav.fmt_size), 4);
+		input.read(reinterpret_cast<char*>(&wav.audio_format), 2);
+		input.read(reinterpret_cast<char*>(&wav.num_of_chan), 2);
+		input.read(reinterpret_cast<char*>(&wav.samples_per_sec), 4);
+		input.read(reinterpret_cast<char*>(&wav.bytes_per_sec), 4);
+		input.read(reinterpret_cast<char*>(&wav.block_align), 2);
+		input.read(reinterpret_cast<char*>(&wav.bits_per_sample), 2);
+		input.read(wav.data_id.data(), 4);
+		input.read(reinterpret_cast<char*>(&wav.data_size), 4);
+	}
+	int loc = input.tellg();
+	std::cout << loc << std::endl;
+
+	//std::string original_file = read_original_file(path);
 	std::string binary_message;
-	unsigned int binary_counter = 0;
+	//unsigned int binary_counter = 0;
 	for (auto c : message)
 	{
 		binary_message += std::bitset<8>(c).to_string();
 	}
-	std::ofstream output(path + 'e', std::ios::out | std::ios::binary);
+	binary_message += "00000000";
 
-	/*for (unsigned int i = 0; i < original_file.length(); i += 8)
+	std::ofstream output(path, std::ios::in | std::ios::out | std::ios::binary);
+	output.seekp(loc);
+	const auto k_sample_size = wav.bits_per_sample;
+	for (unsigned int i = 0; i < binary_message.length(); ++i)
 	{
-		char* chars = new char[9]{ '\0' };
-		for (int j = 0; j < 8; j++)
-		{
-			chars[j] = original_file[i + j];
-		}
-		std::string s = chars;
-
-		std::bitset<8> b(s);
-
-		auto c = static_cast<char>(b.to_ulong());
-		output.write(&c, 1);
-
-		delete[] chars;
-	}*/
-
-	for (int i = 0; i < 704; i += 8)
-	{
-		char* chars = new char[9]{ '\n' };
-
-		for (int j = 0; j < 8; j++)
-		{
-			chars[j] = original_file[i + j];
-		}
-		std::string s = chars;
-		std::bitset<8> b(s);
-		auto c = static_cast<char>(b.to_ulong());
-		output.write(&c, 1);
-
-		delete[] chars;
-	}
-	const auto k_sample_size = 16;
-	for (unsigned int i = 704; i < original_file.length(); i += 16)
-	{
-		char* chars = new char[k_sample_size + 1]{ '\n' };		
-		
-		for (int j = 0; j < k_sample_size; j++)
-		{
-			chars[j] = original_file[i + j];
-		}
-
-		if (binary_counter < binary_message.length()) {
-			chars[0] = binary_message[binary_counter];
-		}
-		
-		std::string s;
-		for (auto k = 0; k < 8; k++) {
-			s += chars[k];
-		}
-		
-		std::bitset<8> b(s);
-		auto c = static_cast<char>(b.to_ulong());
-		output.write(&c, 1);
-
-		s = "";		
-		for (auto k = 8; k < 16; k++) {
-			s += chars[k];
-		}
-
-		std::bitset<8> b2(s);
-		c = static_cast<char>(b2.to_ulong());
-		output.write(&c, 1);
-		
-		binary_counter++;
-		delete[] chars;
-	}
+		output.seekp(loc + i * (k_sample_size / 8), output.beg);
+		input.seekg(loc + i * (k_sample_size / 8));
+		char c;
+		input.read(&c, 1);
+		std::bitset<8> b(c);
+		b.set(0,
+			binary_message[i] == '1' ? true : false
+		);
+		c = static_cast<char>(b.to_ulong());
+		output.put(c);
+	}	
 	output.close();
+	input.close();
 }
 
