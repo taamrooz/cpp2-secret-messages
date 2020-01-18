@@ -68,23 +68,6 @@ void filestream::read_file(const std::string& path, bool verbose)
 	}
 }
 
-std::string read_original_file(const std::string& path)
-{
-	std::string bits;
-	std::ifstream file(path, std::ios::in | std::ios::binary);
-
-	char* c = new char[2]{ '\0' };
-
-	while (file.read(c, 1)) { // read byte by byte
-		bits += std::bitset<8>(c[0]).to_string();
-	}
-
-	delete[] c;
-
-	file.close();
-	return bits;
-}
-
 void filestream::write_message(const std::string& path, const std::string& message)
 {
 	std::ifstream input(path, std::ios::in | std::ios::binary);
@@ -96,9 +79,7 @@ void filestream::write_message(const std::string& path, const std::string& messa
 	int loc = input.tellg();
 	std::cout << loc << std::endl;
 
-	//std::string original_file = read_original_file(path);
 	std::string binary_message;
-	//unsigned int binary_counter = 0;
 	for (auto c : message)
 	{
 		binary_message += std::bitset<8>(c).to_string();
