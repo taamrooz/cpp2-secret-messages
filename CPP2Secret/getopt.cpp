@@ -1,7 +1,7 @@
 #include "getopt.h"
 #include <cstring>
 
-char* optarg = nullptr;
+std::string optarg;
 int optind = 1;
 
 int getopt(int argc, char* const argv[], const char* optstring)

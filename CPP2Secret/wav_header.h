@@ -11,8 +11,8 @@ struct wav_header
 	wav_header(wav_header&& h) = delete;
 	wav_header operator=(const wav_header& h) = delete;
 	wav_header operator=(wav_header&& h) = delete;
+	void read(std::ifstream& stream, bool verbose);
 
-	void read(std::ifstream& stream);
 	std::vector<char> riff; //RIFF Header
 	uint32_t file_size{}; // RIFF Chunk Size
 	std::vector<char> wave; // WAVE Header

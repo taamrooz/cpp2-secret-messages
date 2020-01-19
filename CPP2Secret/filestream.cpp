@@ -12,24 +12,8 @@ void filestream::read_file(const std::string& path, bool verbose)
 	std::ifstream input(path, std::ios::binary);
 	if (input) {
 		wav_header wav{};
-		wav.read(input);
 		std::cout << "Reading file..." << std::endl;
-		if (verbose)
-		{
-			std::cout << "Riff: " << wav.riff[0] << wav.riff[1] << wav.riff[2] << wav.riff[3] << std::endl;
-			std::cout << "File Size: " << wav.file_size << std::endl;
-			std::cout << "Wave: " << wav.wave[0] << wav.wave[1] << wav.wave[2] << wav.wave[3] << std::endl;
-			std::cout << "Fmt: " << wav.fmt[0] << wav.fmt[1] << wav.fmt[2] << wav.fmt[3] << std::endl;
-			std::cout << "Fmt size: " << wav.fmt_size << std::endl;
-			std::cout << "Audio format: " << wav.audio_format << std::endl;
-			std::cout << "Num of channels: " << wav.num_of_chan << std::endl;
-			std::cout << "Samples per sec: " << wav.samples_per_sec << std::endl;
-			std::cout << "Bytes per sec: " << wav.bytes_per_sec << std::endl;
-			std::cout << "Block align: " << wav.block_align << std::endl;
-			std::cout << "Bits per sample: " << wav.bits_per_sample << std::endl;
-			std::cout << "Data: " << wav.data_id[0] << wav.data_id[1] << wav.data_id[2] << wav.data_id[3] << std::endl;
-			std::cout << "Data size: " << wav.data_size << std::endl;
-		}
+		wav.read(input, verbose);
 		if (strncmp(wav.data_id.data(), "data", 4) == 0 && wav.bits_per_sample >= 16 && wav.audio_format == 1)
 		{
 			std::vector<char> buffer(wav.data_size);
@@ -88,7 +72,7 @@ void filestream::write_message(const std::string& path, const std::string& messa
 	wav_header wav{};
 	if (input)
 	{
-		wav.read(input);
+		wav.read(input, false);
 	}
 	int loc = input.tellg();
 

@@ -39,12 +39,16 @@ void core::handle_args(const int& argc, char* argv[])
 			exit(1);
 		}
 	}
-	if (message.empty())
+	if (message.empty() && !file.empty())
 	{
 		filestream::read_file(file, verbose);
 	}
-	else
+	else if (!file.empty())
 	{
 		filestream::write_message(file, message);
+	}
+	else
+	{
+		std::cerr << "You did not supply a file." << std::endl;
 	}
 }
