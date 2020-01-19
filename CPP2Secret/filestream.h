@@ -16,4 +16,6 @@ namespace filestream
 	 * @param message: Message to be written.
 	 */
 	void write_message(const std::string& path, const std::string& message);
+
+	std::string char_to_utf8(int in);
 }
