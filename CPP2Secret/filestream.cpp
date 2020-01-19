@@ -93,16 +93,14 @@ void filestream::write_message(const std::string& path, const std::string& messa
 	int loc = input.tellg();
 
 	std::string binary_message;
-	for (unsigned char c : message)
+	for (unsigned char c: message)
 	{
 		auto encoded = char_to_utf8(c);
 		for (auto& enc : encoded)
 		{
 			binary_message += std::bitset<8>(enc).to_string();
 		}
-
 	}
-
 	binary_message += "00000000";
 
 	std::ofstream output(path, std::ios::in | std::ios::out | std::ios::binary);
@@ -128,69 +126,7 @@ void filestream::write_message(const std::string& path, const std::string& messa
 
 std::string filestream::char_to_utf8(int in)
 {
-	if (in == 0)
-	{
-		return " ";
-	}
-	if ((in <= 0x7F) && (in > 0x00))
-	{
-		std::string out("."); //placeholder
-		const std::bitset<8> b(in);
-		out[0] = static_cast<unsigned char>(b.to_ulong());
-		return out;
-	}
-	if ((in >= 0x80) && (in <= 0x07FF))
-	{
-		std::string out(".."); //placeholder
-		const auto first = (in >> 6) ^ 0xC0; // discard last 2 bytes;
-		const auto second = ((in ^ 0xFFC0) | 0x80) & ~0x40; //discard last byte
-
-		const std::bitset<8> b1(first);
-		const std::bitset<8> b2(second);
-
-		out[0] = static_cast<unsigned char>(b1.to_ulong());
-		out[1] = static_cast<unsigned char>(b2.to_ulong());
-		
-		return out;
-	}
-	if ((in >= 0x800) && (in <= 0xFFFF))
-	{
-		std::string out("..."); //placeholder
-		
-		const auto first = (in ^ 0xFC0FFF) >> 0x0C | 0xE0;
-		const auto second = (((in ^ 0xFFC0) >> 6) | 0x80) & ~0x40;
-		const auto third = ((in ^ 0xFFC0) | 0x80) & ~0x40;
-
-		const std::bitset<8> b1(first);
-		const std::bitset<8> b2(second);
-		const std::bitset<8> b3(third);
-
-		out[0] = static_cast<unsigned char>(b1.to_ulong());
-		out[1] = static_cast<unsigned char>(b2.to_ulong());
-		out[2] = static_cast<unsigned char>(b3.to_ulong());
-		return out;
-	}
-	if ((in >= 0x10000) && (in <= 0x10FFFF))
-	{
-		
-		std::string out("...."); //placeholder
-
-		const auto first = (in ^ 0xFC0FFF) >> 0x0C | 0xE0;
-		const auto second = (((in ^ 0xFFC0) >> 6) | 0x80) & ~0x40;
-		const auto third = ((in ^ 0xFFC0) | 0x80) & ~0x40;
-		const auto fourth = ((in ^ 0xFFC0) | 0x80) & ~0x40;
-
-		const std::bitset<8> b1(first);
-		const std::bitset<8> b2(second);
-		const std::bitset<8> b3(third);
-		const std::bitset<8> b4(fourth);
-
-		out[0] = static_cast<unsigned char>(b1.to_ulong());
-		out[1] = static_cast<unsigned char>(b2.to_ulong());
-		out[2] = static_cast<unsigned char>(b3.to_ulong());
-		out[3] = static_cast<unsigned char>(b4.to_ulong());
-		return out;
-	}
-	return " ";
+	std::wstring_convert<std::codecvt_utf8<char32_t>, char32_t> conv;
+	return conv.to_bytes(static_cast<char32_t>(in));
 }
 
