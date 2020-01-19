@@ -131,7 +131,7 @@ void filestream::write_message(const std::string& path, const std::string& messa
 	input.close();
 }
 
-std::string filestream::char_to_utf8(int in)
+std::string filestream::char_to_utf8(const int& in)
 {
 	if (in == 0)
 	{
@@ -140,18 +140,18 @@ std::string filestream::char_to_utf8(int in)
 	if ((in <= 0x7F) && (in > 0x00))
 	{
 		std::string out("."); //placeholder
-		std::bitset<8> b(in);
+		const std::bitset<8> b(in);
 		out[0] = static_cast<unsigned char>(b.to_ulong());
 		return out;
 	}
 	if ((in >= 0x80) && (in <= 0x07FF))
 	{
 		std::string out(".."); //placeholder
-		auto first = (in >> 6) ^ 0xC0; // discard last 2 bytes;
-		auto second = ((in ^ 0xFFC0) | 0x80) & ~0x40; //discard last byte
+		const auto first = (in >> 6) ^ 0xC0; // discard last 2 bytes;
+		const auto second = ((in ^ 0xFFC0) | 0x80) & ~0x40; //discard last byte
 
-		std::bitset<8> b1(first);
-		std::bitset<8> b2(second);
+		const std::bitset<8> b1(first);
+		const std::bitset<8> b2(second);
 
 		out[0] = static_cast<unsigned char>(b1.to_ulong());
 		out[1] = static_cast<unsigned char>(b2.to_ulong());

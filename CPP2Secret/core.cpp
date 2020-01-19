@@ -3,7 +3,7 @@
 #include "filestream.h"
 #include "getopt.h"
 
-void core::handle_args(int argc, char* argv[])
+void core::handle_args(const int& argc, char* argv[])
 {
 	std::string file;
 	std::string message;
