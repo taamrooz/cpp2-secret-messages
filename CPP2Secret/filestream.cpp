@@ -90,7 +90,6 @@ void filestream::write_message(const std::string& path, const std::string& messa
 	std::ofstream output(path, std::ios::in | std::ios::out | std::ios::binary);
 	output.seekp(loc);
 	const auto k_sample_size = wav.bits_per_sample;
-	unsigned int written_bits = 0;
 	for (unsigned int i = 0; i < binary_message.length(); ++i)
 	{
 		output.seekp(loc + i * (k_sample_size / 8), std::ofstream::beg);
