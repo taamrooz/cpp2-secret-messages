@@ -54,16 +54,10 @@ void filestream::read_file(const std::string& path, bool verbose)
 						has_message = true;
 						break;
 					}
-					
-					
-						//Cast bitset to char and append to message
-						full_mess += static_cast<unsigned char>(bi.to_ulong());
-						bi.reset();
-
-						b_counter = 7;
-					
-					
-
+					//Cast bitset to char and append to message
+					full_mess += static_cast<unsigned char>(bi.to_ulong());
+					bi.reset();
+					b_counter = 7;
 				}
 			}
 			if (has_message)
@@ -101,11 +95,11 @@ void filestream::write_message(const std::string& path, const std::string& messa
 	for (unsigned char c : message)
 	{
 		auto encoded = char_to_utf8(c);
-		for(auto& enc: encoded)
+		for (auto& enc : encoded)
 		{
 			binary_message += std::bitset<8>(enc).to_string();
 		}
-		
+
 	}
 
 	binary_message += "00000000";
@@ -131,7 +125,7 @@ void filestream::write_message(const std::string& path, const std::string& messa
 	input.close();
 }
 
-std::string filestream::char_to_utf8(const int& in)
+std::string filestream::char_to_utf8(int in)
 {
 	if (in == 0)
 	{
