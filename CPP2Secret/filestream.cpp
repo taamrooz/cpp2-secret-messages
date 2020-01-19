@@ -5,6 +5,7 @@
 #include <bitset>
 #include <vector>
 #include <windows.h>
+#include <codecvt>
 
 void filestream::read_file(const std::string& path, bool verbose)
 {
@@ -149,6 +150,45 @@ std::string filestream::char_to_utf8(int in)
 
 		out[0] = static_cast<unsigned char>(b1.to_ulong());
 		out[1] = static_cast<unsigned char>(b2.to_ulong());
+		
+		return out;
+	}
+	if ((in >= 0x800) && (in <= 0xFFFF))
+	{
+		std::string out("..."); //placeholder
+		
+		const auto first = (in ^ 0xFC0FFF) >> 0x0C | 0xE0;
+		const auto second = (((in ^ 0xFFC0) >> 6) | 0x80) & ~0x40;
+		const auto third = ((in ^ 0xFFC0) | 0x80) & ~0x40;
+
+		const std::bitset<8> b1(first);
+		const std::bitset<8> b2(second);
+		const std::bitset<8> b3(third);
+
+		out[0] = static_cast<unsigned char>(b1.to_ulong());
+		out[1] = static_cast<unsigned char>(b2.to_ulong());
+		out[2] = static_cast<unsigned char>(b3.to_ulong());
+		return out;
+	}
+	if ((in >= 0x10000) && (in <= 0x10FFFF))
+	{
+		
+		std::string out("...."); //placeholder
+
+		const auto first = (in ^ 0xFC0FFF) >> 0x0C | 0xE0;
+		const auto second = (((in ^ 0xFFC0) >> 6) | 0x80) & ~0x40;
+		const auto third = ((in ^ 0xFFC0) | 0x80) & ~0x40;
+		const auto fourth = ((in ^ 0xFFC0) | 0x80) & ~0x40;
+
+		const std::bitset<8> b1(first);
+		const std::bitset<8> b2(second);
+		const std::bitset<8> b3(third);
+		const std::bitset<8> b4(fourth);
+
+		out[0] = static_cast<unsigned char>(b1.to_ulong());
+		out[1] = static_cast<unsigned char>(b2.to_ulong());
+		out[2] = static_cast<unsigned char>(b3.to_ulong());
+		out[3] = static_cast<unsigned char>(b4.to_ulong());
 		return out;
 	}
 	return " ";
